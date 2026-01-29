@@ -20,8 +20,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import org.eclipse.moquette.proto.messages.AbstractMessage;
 import org.eclipse.moquette.proto.messages.AbstractMessage.QOSType;
@@ -125,7 +125,7 @@ class ProtocolProcessor implements EventHandler<ValueEvent> {
 	//maps clientID to Will testament, if specified on CONNECT
 	private Map<String, WillMessage> m_willStore = new HashMap<>();
 
-	private ExecutorService m_executor;
+	private ThreadFactory threadFactory;
 
 	private RingBuffer<ValueEvent> m_ringBuffer;
 
@@ -151,9 +151,8 @@ class ProtocolProcessor implements EventHandler<ValueEvent> {
 		m_sessionsStore = sessionsStore;
 
 		//init the output ringbuffer
-		m_executor = Executors.newFixedThreadPool(1);
-
-		Disruptor<ValueEvent> disruptor = new Disruptor<>(ValueEvent.EVENT_FACTORY, 1024 * 32, m_executor);
+		threadFactory = Executors.defaultThreadFactory();
+		Disruptor<ValueEvent> disruptor = new Disruptor<ValueEvent>(ValueEvent.EVENT_FACTORY, 1024 * 32, threadFactory);
 		disruptor.handleEventsWith(this);
 		disruptor.start();
 

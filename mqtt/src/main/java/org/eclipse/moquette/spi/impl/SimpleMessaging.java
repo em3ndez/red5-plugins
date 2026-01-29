@@ -16,9 +16,9 @@
 package org.eclipse.moquette.spi.impl;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadFactory;
 
 import org.eclipse.moquette.proto.messages.AbstractMessage;
 import org.eclipse.moquette.spi.IMessagesStore;
@@ -64,7 +64,7 @@ public class SimpleMessaging implements IMessaging, EventHandler<ValueEvent> {
 
 	private ISessionsStore sessionsStore;
 
-	private ExecutorService executor;
+	private ThreadFactory threadFactory;
 
 	private Disruptor<ValueEvent> disruptor;
 	
@@ -86,8 +86,8 @@ public class SimpleMessaging implements IMessaging, EventHandler<ValueEvent> {
 
 	public void init() {
 		subscriptions = new SubscriptionsStore();
-		executor = Executors.newFixedThreadPool(1);
-		disruptor = new Disruptor<>(ValueEvent.EVENT_FACTORY, 1024 * 32, executor);
+		threadFactory = Executors.defaultThreadFactory();
+		disruptor = new Disruptor<>(ValueEvent.EVENT_FACTORY, 1024 * 32, threadFactory);
 		/*Disruptor<ValueEvent> m_disruptor = new Disruptor<ValueEvent>(ValueEvent.EVENT_FACTORY, 1024 * 32, m_executor, ProducerType.MULTI, new BusySpinWaitStrategy());*/
 		disruptor.handleEventsWith(this);
 		disruptor.start();
@@ -134,7 +134,6 @@ public class SimpleMessaging implements IMessaging, EventHandler<ValueEvent> {
 			LOG.debug("waiting 10 sec to m_stopLatch");
 			boolean elapsed = !stopLatch.await(10, TimeUnit.SECONDS);
 			LOG.debug("after m_stopLatch");
-			executor.shutdown();
 			disruptor.shutdown();
 			if (elapsed) {
 				LOG.error("Can't stop the server in 10 seconds");

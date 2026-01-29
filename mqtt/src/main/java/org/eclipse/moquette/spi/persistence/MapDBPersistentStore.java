@@ -29,6 +29,7 @@ import static org.eclipse.moquette.spi.impl.Utils.defaultGet;
 
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
+import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,7 +82,7 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionsStore {
 	@Override
 	public void initStore() {
 		if (m_storePath == null || m_storePath.isEmpty()) {
-			m_db = DBMaker.newMemoryDB().make();
+			m_db = DBMaker.memoryDB().make();
 		} else {
 			File tmpFile;
 			try {
@@ -91,14 +92,14 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionsStore {
 				LOG.error(null, ex);
 				throw new MQTTException("Can't create temp file for subscriptions storage [" + m_storePath + "]", ex);
 			}
-			m_db = DBMaker.newFileDB(tmpFile).make();
+			m_db = DBMaker.fileDB(tmpFile).make();
 		}
-		m_retainedStore = m_db.getHashMap("retained");
-		m_persistentMessageStore = m_db.getHashMap("persistedMessages");
-		m_inflightStore = m_db.getHashMap("inflight");
-		m_inFlightIds = m_db.getHashMap("inflightPacketIDs");
-		m_persistentSubscriptions = m_db.getHashMap("subscriptions");
-		m_qos2Store = m_db.getHashMap("qos2Store");
+		m_retainedStore = m_db.hashMap("retained", Serializer.STRING, Serializer.JAVA).createOrOpen();
+		m_persistentMessageStore = m_db.hashMap("persistedMessages", Serializer.STRING, Serializer.JAVA).createOrOpen();
+		m_inflightStore = m_db.hashMap("inflight", Serializer.STRING, Serializer.JAVA).createOrOpen();
+		m_inFlightIds = m_db.hashMap("inflightPacketIDs", Serializer.STRING, Serializer.JAVA).createOrOpen();
+		m_persistentSubscriptions = m_db.hashMap("subscriptions", Serializer.STRING, Serializer.JAVA).createOrOpen();
+		m_qos2Store = m_db.hashMap("qos2Store", Serializer.STRING, Serializer.JAVA).createOrOpen();
 	}
 
 	@Override
