@@ -13,3 +13,5 @@ target/
 
 local.properties
 
+deploy.log
+.vscode/
